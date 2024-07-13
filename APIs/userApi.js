@@ -1,81 +1,135 @@
 //create mini-express app
 const exp = require("express");
-const userApp = exp.Router();
 
+const userApp = exp.Router();
+const bcryptjs=require('bcryptjs')
+const jwt=require('jsonwebtoken')
+const tokenVerify=require('../middlewares/tokenVerify.js')
+const expressAsyncHandler=require('express-async-handler')
 
 //add body parser middleware
 userApp.use(exp.json());
 
-//test data
-let usersList = [
-  { id: 1, name: "ravi" },
-  { id: 2, name: "vikas" },
-];
-
 //create sample rest api(req handlers- routes)
-//route to get users
-userApp.get("/users", (req, res) => {
-  res.send({ message: "all users", payload: usersList });
-});
+//route to get users(protected route)
+userApp.get("/users", tokenVerify,expressAsyncHandler(async (req, res) => {
+  //get usersCollection obj
+  const usersCollection = req.app.get("usersCollection");
+  //get users data from usersCollection of DB
+  let usersList = await usersCollection.fnd().toArray();
+  //send users data to client
+  res.send({ message: "users", payload: usersList });
+}));
 
-//PUBLIC ROUTES
 
-//route to send one user by id
-userApp.get("/users/:id",  (req, res) => {
+
+//route to send one user by id(protected route)
+userApp.get("/users/:username", tokenVerify,expressAsyncHandler(async(req, res) => {
+  //get usersCollection obj
+  const usersCollection = req.app.get("usersCollection");
   //get id from url
-  let idOfUrl = Number(req.params.id); //=>{ id : 20}
-  //serch the in users array with ID
-  let userById = usersList.find((user) => user.id === idOfUrl);
-  //if user not found
-  if (userById === undefined) {
-    res.send({ message: "Invalid user ID" });
-  }
-  //if user found
-  else {
-    res.send({ message: "one user", payload: userById });
-  }
-});
-
-//route to create user
-userApp.post("/user", (req, res) => {
-  //get new user from req
-  let newUser = req.body;
-  //push newUser to users array
-  usersList.push(newUser);
+  const usernameOfUrl=req.params.username;
+  //find user by id
+  let user=await usersCollection.findOne({username:{$eq:usernameOfUrl}})
   //send res
-  res.send({ message: "New user created" });
-});
+  res.send({message:"one user",payload:user})
+}));
 
-//route to update user
-userApp.put("/user", (req, res) => {
-  //get modified user from req
-  let modifiedUser = req.body;
-  //find index of user in usersList with modified user id
-  let index = usersList.findIndex((user) => user.id === modifiedUser.id);
-  //if user not found
-  if (index === -1) {
-    res.send({ message: "User not found" });
-  } else {
-    usersList[index] = modifiedUser;
-    res.send({ message: "User modified" });
-  }
-});
 
-//route to delete user
-userApp.delete("/user/:id", (req, res) => {
-  //get id of user to remove
-  let userIfOfurl = Number(req.params.id);
-  //find index of user in usersList with modified user id
-  let index = usersList.findIndex((user) => user.id === userIfOfurl);
-  //if user not found
-  if (index === -1) {
-    res.send({ message: "User not found" });
-  } else {
-    usersList.splice(index, 1);
-    res.send({ message: "User deleted" });
-  }
-});
 
+
+//route to create user (public route)
+userApp.post("/user", expressAsyncHandler(async(req, res) => {
+
+  //get usersCollection obj
+  const usersCollection = req.app.get("usersCollection");
+  //get new User from client
+  const newUser=req.body;
+
+   //verify duplicate user
+   let existingUser=await usersCollection.findOne({username:newUser.username})
+   //if user already existed
+   if(existingUser!==null){
+     res.send({message:"User already existed"})
+   }
+   //if user not existed
+   else{
+     //hash the password
+     let hashedpassword= await bcryptjs.hash(newUser.password,7)
+     //replace plain password with hashed password in newUser
+     newUser.password=hashedpassword;
+     //save user
+     await usersCollection.insertOne(newUser)
+     //send res
+     res.send({message:"user created"})
+   }
+
+
+
+
+
+
+
+}));
+
+
+
+//user login(authentication)(public route)
+userApp.post('/login',expressAsyncHandler(async(req,res)=>{
+  //get usersCollection obj
+const usersCollection = req.app.get("usersCollection");
+//get new UserCredentils from client
+const userCred=req.body;
+//verify username
+let dbUser=await usersCollection.findOne({username:userCred.username})
+//if user not existed
+if(dbUser===null){
+ res.send({message:"Invalid username"})
+}
+//if user found,compare passwords
+else{
+   let result=await bcryptjs.compare(userCred.password,dbUser.password)
+   //if passwords not matched
+   if(result===false){
+     res.send({message:"Invalid password"})
+   }
+   //if passwords are matched
+   else{
+     //create JWT token
+      let signedToken= jwt.sign({username:userCred.username},'abcdef',{expiresIn:'1h'})
+     //send res
+     res.send({message:"login success",token:signedToken,user:dbUser})
+   }
+}
+
+}))
+
+
+
+
+
+
+
+
+
+
+
+
+//route to update user(protected route)
+userApp.put("/user", tokenVerify,expressAsyncHandler(async(req, res) => {
+      //get usersCollection obj
+      const usersCollection = req.app.get("usersCollection");
+      //get modified user from client
+      let modifiedUser=req.body;
+      //modify by username
+      await usersCollection.updateOne({username:modifiedUser.username},{$set:{...modifiedUser}})
+      res.send({message:"User modified"})
+}));
+
+//route to delete user(protected route)
+userApp.delete("/user/:id", tokenVerify,expressAsyncHandler((req, res) => {
+  
+}));
 
 //export userApp
-module.exports=userApp;
+module.exports = userApp;

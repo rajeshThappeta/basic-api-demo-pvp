@@ -1,26 +1,54 @@
 get http://localhost:4000/user-api/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1hZGh1IiwiaWF0IjoxNzIwODYzMTAwLCJleHAiOjE3MjA4NjY3MDB9.-HeroZoS7s9yapnOAQ9XSIzRoVehLcz4CS5pGi7bNH0
+
+
+
+
 
 ###
-get http://localhost:4000/user-api/users/2
+get http://localhost:4000/user-api/users/madhu
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1hZGh1IiwiaWF0IjoxNzIwODY3NDU3LCJleHAiOjE3MjA4NzEwNTd9.hUVEHKQ-ff8HMYtekj2_wnTmhRM6AD5zJ8qYYBaUhRc
+
 
 ###
 post http://localhost:4000/user-api/user
 Content-Type: application/json
 
 {
-    "id":3,
-    "name":"madhu"
+    "fullname":"madhu babu",
+    "username":"madhu",
+    "password":"madhu",
+    "email":"madhu@gmail.com"
 }
+
+###
+post http://localhost:4000/user-api/login
+Content-Type: application/json
+
+{
+    
+    "username":"madhu",
+    "password":"madhu"
+   
+}
+
+
+
+
 
 
 
 ###
 put http://localhost:4000/user-api/user
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1hZGh1IiwiaWF0IjoxNzIwODY3NDU3LCJleHAiOjE3MjA4NzEwNTd9.hUVEHKQ-ff8HMYtekj2_wnTmhRM6AD5zJ8qYYBaUhRc
+
 
 {
-    "id":1,
-    "name":"ravi kumar"
+    "fullname":"madhu sarma",
+    "username":"madhu",
+    "password":"madhu",
+    "email":"madhusarma@gmail.com"
 }
 
 
@@ -28,6 +56,8 @@ Content-Type: application/json
 
 ###
 delete http://localhost:4000/user-api/user/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1hZGh1IiwiaWF0IjoxNzIwODYwNjkxLCJleHAiOjE3MjA4NjQyOTF9.rq1To5-djRFwJniKaHE7W40V3bpGgPuwbsCe283vxSk
+
 
 
 
